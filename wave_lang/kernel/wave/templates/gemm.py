@@ -33,14 +33,14 @@ def get_gemm_kernel(
     # Workgroup tile sizes
     BLOCK_M = tkl.sym.BLOCK_M
     BLOCK_N = tkl.sym.BLOCK_N
-    BLOCK_K = tkl.sym.BLOCK_K
+    # BLOCK_K = tkl.sym.BLOCK_K
     # Address space (for GPU, shared(1) or global(0))
     ADDRESS_SPACE = tkl.sym.ADDRESS_SPACE
     dtype = torch_dtype_to_wave(dtype)
     # Expose user-constraints
     constraints: list[tkw.Constraint] = [tkw.WorkgroupConstraint(M, BLOCK_M, 0)]
     constraints += [tkw.WorkgroupConstraint(N, BLOCK_N, 1)]
-    constraints += [tkw.TilingConstraint(K, BLOCK_K)]
+    # constraints += [tkw.TilingConstraint(K, BLOCK_K)]
     constraints += [tkw.WaveConstraint(M, BLOCK_M / 2)]
     constraints += [tkw.WaveConstraint(N, BLOCK_N / 2)]
 
@@ -48,8 +48,8 @@ def get_gemm_kernel(
 
     # With dynamic dimensions, we need to add an assumption on how big
     # the iterate dimension is to determine whether we can schedule or not.
-    if dynamic_dims[2]:
-        constraints += [tkw.Assumption(K > BLOCK_K * 4)]
+    # if dynamic_dims[2]:
+    #     constraints += [tkw.Assumption(K > BLOCK_K * 4)]
 
     # Wave-level micro-kernel.
     # Since warps are not directly addressable, there is no
@@ -67,7 +67,7 @@ def get_gemm_kernel(
 
         # This microkernel encodes the fact that if the iterate
         # dimension were tiled, then we would need to materialize a loop.
-        @tkw.iterate(K, init_args=[c_reg])
+        # @tkw.iterate(K, init_args=[c_reg])
         def repeat(acc: tkl.Register[M, N, tkl.f32]) -> tkl.Register[M, N, tkl.f32]:
             # a_reg: tkw.Register[M, K, dtype]
             a_reg = tkw.read(a)
@@ -78,13 +78,14 @@ def get_gemm_kernel(
             return acc
 
         # repeat represents the results of the loop
-        tkw.write(repeat, c)
+        tkw.write(repeat(c_reg),c)
+        # tkw.write(repeat, c)
 
     hyperparams = {
         ADDRESS_SPACE: SHARED_ADDRESS_SPACE,
         BLOCK_M: 64,
         BLOCK_N: 64,
-        BLOCK_K: 32,
+        # BLOCK_K: 32,
         M: shape[0],
         N: shape[1],
         K: shape[2],

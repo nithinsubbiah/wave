@@ -193,7 +193,6 @@ def identify_optimizable_loads(
             else:
                 # Optimization do not handle other cases than above, so skip.
                 continue
-
         optimizable_loads[custom.memory] = (
             expected_number_of_loads,
             [custom],
@@ -201,6 +200,7 @@ def identify_optimizable_loads(
             memory_load_elems_per_thread,
             memory_max_elements_per_load,
         )
+        breakpoint()
     return optimizable_loads
 
 
@@ -370,6 +370,7 @@ def minimize_global_loads(trace: CapturedTrace, constraints: list[Constraint]):
         max_elements_per_load,
         total_number_of_threads,
     )
+    breakpoint()
 
     # Construct new global read nodes and write shared nodes.
     optimized_writes = add_optimized_nodes(

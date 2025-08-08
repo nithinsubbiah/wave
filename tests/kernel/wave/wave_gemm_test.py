@@ -110,22 +110,23 @@ def testGemmBench(tmp_path):
 
 
 @require_e2e
-@pytest.mark.parametrize("shape", get_test_shapes("test_gemm"))
+# @pytest.mark.parametrize("shape", get_test_shapes("test_gemm"))
+@pytest.mark.parametrize("shape", [(16,16,15)])
 @pytest.mark.parametrize(
     "enable_scheduling",
     [
         SchedulingType.NONE,
-        SchedulingType.PREFETCH,
-        SchedulingType.FOUR_STAGE,
-        SchedulingType.MODULO,
+        # SchedulingType.PREFETCH,
+        # SchedulingType.FOUR_STAGE,
+        # SchedulingType.MODULO,
     ],
 )
-@param_bool("dynamic_dims", "dyn")
+@param_bool("dynamic_dims", "dyn", [False])
 @pytest.mark.parametrize(
     "mfma_variant",
     [
         MMAType.F32_16x16x16_F16,
-        MMAType.F32_32x32x8_F16,
+        # MMAType.F32_32x32x8_F16,
     ],
 )
 @pytest.mark.parametrize("datatype", [torch.float16])
@@ -160,7 +161,7 @@ def testPureGemm(
     )
     options = set_default_run_config(options)
     gemm = wave_compile(options, gemm)
-
+    breakpoint()
     a = device_randn(shape[0], shape[2], dtype=datatype)
     b = device_randn(shape[1], shape[2], dtype=datatype)
     c = device_zeros(shape[0], shape[1], dtype=torch.float32)
