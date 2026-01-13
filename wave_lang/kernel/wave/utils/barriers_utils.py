@@ -21,6 +21,7 @@ from ...ops.wave_ops import (
     CustomOp,
     GatherToLDS,
     TensorLoadToLDS,
+    MemoryCounterWait,
     Read,
     Write,
     get_custom,
@@ -422,6 +423,7 @@ def minimize_placement_strategy(
     Efficient greedy barrier placement.
         - Forward hazards: O(n log n) sort + O(n) sweep with a single "last_pos".
         - Cross-iter hazards: two O(log m) range checks via binary search over an always-sorted list of chosen placement positions.
+        - Skips hazards that already have MemoryCounterWait synchronization.
     """
     if not sync_regions:
         return []
