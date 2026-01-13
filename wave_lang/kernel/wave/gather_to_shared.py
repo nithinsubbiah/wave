@@ -328,7 +328,7 @@ def emit_global_to_lds(
         nd_index = config.get_offset(i)
         logger.info(f"nd_index={nd_index}")
         write_index = {}
-        for bound_expr, idx in zip(read.indexing_dims, new_nd_index):
+        for bound_expr, idx in zip(read.indexing_dims, nd_index):
             last = bound_expr == read.indexing_dims[-1]
             dim = infer_dim(bound_expr)
             size = elements_per_thread if last else 1
