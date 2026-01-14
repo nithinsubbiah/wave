@@ -194,8 +194,6 @@ def get_gather_to_shared_config(
     materialized_wave_shape = materialize_shape(
         wave_tile_size, ordered_shape, vector_shapes
     )
-    # vector_shapes can have 0 values to show we dont want a leading dim. but in effect is 1.
-    materialized_wave_shape = [dim_size or 1 for dim_size in materialized_wave_shape]
     logger.info(f"materialized_wave_shape={materialized_wave_shape}")
 
     total_number_of_elements = prod(materialized_shape)
@@ -330,10 +328,9 @@ def emit_global_to_lds(
         nd_index = config.get_offset(i)
         logger.info(f"nd_index={nd_index}")
         write_index = {}
-        for bound_expr, idx in zip(read.indexing_dims, nd_index):
+        for bound_expr, idx in zip(read.indexing_dims, new_nd_index):
             last = bound_expr == read.indexing_dims[-1]
             dim = infer_dim(bound_expr)
-
             size = elements_per_thread if last else 1
             stride = 1
             write_index[dim] = IndexSequence(idx, size, stride)
