@@ -194,6 +194,8 @@ def get_gather_to_shared_config(
     materialized_wave_shape = materialize_shape(
         wave_tile_size, ordered_shape, vector_shapes
     )
+    # vector_shapes can have 0 values to show we dont want a leading dim. but in effect is 1.
+    materialized_wave_shape = [dim_size or 1 for dim_size in materialized_wave_shape]
     logger.info(f"materialized_wave_shape={materialized_wave_shape}")
 
     total_number_of_elements = prod(materialized_shape)

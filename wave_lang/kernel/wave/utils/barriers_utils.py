@@ -21,7 +21,6 @@ from ...ops.wave_ops import (
     CustomOp,
     GatherToLDS,
     TensorLoadToLDS,
-    MemoryCounterWait,
     Read,
     Write,
     get_custom,
@@ -425,7 +424,6 @@ def minimize_placement_strategy(
     Efficient greedy barrier placement.
         - Forward hazards: O(n log n) sort + O(n) sweep with a single "last_pos".
         - Cross-iter hazards: two O(log m) range checks via binary search over an always-sorted list of chosen placement positions.
-        - Skips hazards that already have MemoryCounterWait synchronization.
     """
     if not sync_regions:
         return []
@@ -447,42 +445,6 @@ def minimize_placement_strategy(
             return False
         return any(lo <= p <= hi for p in ranges)
 
-    
-    def has_memory_counter_wait(region: SyncRegion):
-        """
-        Check if there's a MemoryCounterWait node between producer and consumer.
-        
-        MemoryCounterWait provides synchronization for async memory operations,
-        so we can skip placing a barrier if one already exists between the hazard pair.
-        
-        Args:
-            region: The synchronization region contains producer and consumer.
-        Returns:
-            True if MemoryCounterWait exists between producer and consumer, False otherwise
-        """
-        if region.producer._topo_location < region.consumer._topo_location:
-            # For forward hazards - producer before consumer in same iteration
-            current = region.producer.next
-            while current is not None and current._topo_location < region.consumer._topo_location:
-                if isinstance(get_custom(current), MemoryCounterWait):
-                    return True
-                current = current.next
-        else:
-            # For cross-iteration hazards - producer after consumer in loop body
-            # Check from producer to end of graph
-            current = region.producer.next
-            while current is not None and current._topo_location < region.graph_end._topo_location:
-                if isinstance(get_custom(current), MemoryCounterWait):
-                    return True
-                current = current.next
-            # Check from start of graph to consumer
-            current = region.graph_start
-            while current is not None and current._topo_location < region.consumer._topo_location:
-                if isinstance(get_custom(current), MemoryCounterWait):
-                    return True
-                current = current.next
-        return False
-
     # 1) sort by (consumer, producer)
     regions = sorted(
         sync_regions,
@@ -496,10 +458,6 @@ def minimize_placement_strategy(
         if region.cross_iter:
             continue
         start, end = get_location(region)
-
-        # # Skip if MemoryCounterWait already provides synchronization
-        # if has_memory_counter_wait(region):
-        #     continue
 
         # A hazard window is covered if placement is at (start, end]
         # We append to result if this window is not covered.
@@ -516,10 +474,6 @@ def minimize_placement_strategy(
     for region in regions:
         if not region.cross_iter:
             continue
-
-        # # Skip if MemoryCounterWait already provides synchronization
-        # if has_memory_counter_wait(region):
-        #     continue
 
         start, end = get_location(region)
         graph_start, graph_end = (

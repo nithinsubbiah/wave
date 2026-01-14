@@ -793,9 +793,6 @@ def transform_async_two_PP_clusters(
     # 1st cluster interleaved local and global reads.
     clusters.append(sliced_local_load_lhs[0])
     clusters.append(sliced_local_load_rhs[0])
-    # barrier_op = SchedulingBarrier([]).add_to_graph(tmp_graph)
-    # barrier_op.location = context_location
-    # clusters.append(insert_op_after(barrier_op, sliced_local_load_rhs[0]))
 
     clusters.append(sliced_glds_lhs[0])
     barrier_op = SchedulingBarrier([]).add_to_graph(tmp_graph)
